@@ -1,0 +1,47 @@
+a Heroku app to take IFTTT webhooks, process them, and do something, and then possibly send a request back out to IFTTT
+
+todo: set up subdomain
+todo: from heroku app settings, get DNS record to make CNAME of heroku
+todo: set CNAME on hosting
+done: make recipes on ifttt
+todo: get webhook URLs on ifttt
+
+Create a Web App and RESTful API Server Using the MEAN Stack
+https://devcenter.heroku.com/articles/mean-apps-restful-api
+npm install -g @angular/cli
+ng new app-name-here - create new angular app skeleton
+
+
+
+
+beginning Node.js Heroku tutorial: https://devcenter.heroku.com/articles/getting-started-with-nodejs#set-up
+heroku login
+node --version: v8.11.1
+npm --version: 5.6.0
+git clone https://github.com/heroku/node-js-getting-started.git
+heroku create
+heroku apps:create --region eu --ssh-git
+git push heroku master
+heroku ps:scale web=1 - scale to 1 web dyno (free)
+heroku ps:scale web=0 - scale to no dynos (essentially shut off app)
+heroku open
+heroku logs --tail
+./Procfile - tells heroku which cmd to execute upon start of app (process-type: bash cmd)
+    web: node index.js
+package.json (also defines entry point)
+npm install
+heroku local web - run `web` profile at http://localhost:5000/
+add a dependency to package.json: npm install cool-ascii-faces
+npm install
+const cool = require('cool-ascii-faces')
+express()/n...  .get('/cool', (req, res) => res.send(cool()))
+>> ./index.js
+heroku local
+http://localhost:5000/cool
+git commit, git push heroku master
+heroku open cool - open app in browser, go right to /cool route
+heroku run bash - open a new worker dyno, run bash interactive console
+./.env defines process.env.VAR_NAME for use in .js files (on local only?)
+heroku config:set TIMES=2 (on remote?)
+heroku config - view config variables
+postgresql database: https://devcenter.heroku.com/articles/getting-started-with-nodejs#provision-a-database
