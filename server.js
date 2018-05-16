@@ -54,6 +54,7 @@ app.get("/api/contacts", function(req, res) {
 
 app.post("/api/contacts", function(req, res) {
     var newContact = req.body;
+    newContact.createDate = new Date();
 
     if (!req.body.name) {
         handleError(res, "Invalid user input", "Must provide a name.", 400);
@@ -68,12 +69,6 @@ app.post("/api/contacts", function(req, res) {
     });
 });
 
-
-app.get("/api/contacts", function(req, res) {
-});
-
-app.post("/api/contacts", function(req, res) {
-});
 /*  "/api/contacts/:id"
  *    GET: find contact by id
  *    PUT: update contact by id
@@ -81,10 +76,35 @@ app.post("/api/contacts", function(req, res) {
  */
 
 app.get("/api/contacts/:id", function(req, res) {
+    db.collection(CONTACTS_COLLECTION).findOne({ _id: new ObjectID(req.params.id) }, function(err, doc) {
+        if (err) {
+            handleError(res, err.message, "Failed to get contact");
+        } else {
+            res.status(200).json(doc);
+        }
+    });
 });
 
 app.put("/api/contacts/:id", function(req, res) {
+    var updateDoc = req.body;
+    delete updateDoc._id;
+
+    db.collection(CONTACTS_COLLECTION).updateOne({_id: new ObjectID(req.params.id)}, updateDoc, function(err, doc) {
+        if (err) {
+            handleError(res, err.message, "Failed to update contact");
+        } else {
+            updateDoc._id = req.params.id;
+            res.status(200).json(updateDoc);
+        }
+    });
 });
 
 app.delete("/api/contacts/:id", function(req, res) {
+    db.collection(CONTACTS_COLLECTION).deleteOne({_id: new ObjectID(req.params.id)}, function(err, result) {
+        if (err) {
+            handleError(res, err.message, "Failed to delete contact");
+        } else {
+            res.status(200).json(req.params.id);
+        }
+    });
 });
