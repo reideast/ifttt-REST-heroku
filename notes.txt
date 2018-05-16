@@ -28,6 +28,19 @@ extra libraries: npm install mongodb express body-parser --save
 push and build to heroku, even when local isn't on master:
 git push heroku head:master
 
+write rest endpoints in server.js
+test with cURL:
+curl -H "Content-Type: application/json" -d '{"name":"mLab Support", "email": "support@mlab.com"}' http://YOUR-APP-NAME.herokuapp.com/api/contacts
+
+
+generate Angular dir structure and contacts classes:
+mkdir src/app/contacts
+ng generate class contacts/contact
+ng generate component contacts/contact-details
+ng generate component contacts/contact-list
+ng generate service contacts/contact
+
+
 
 
 
