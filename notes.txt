@@ -9,7 +9,22 @@ todo: get webhook URLs on ifttt
 Create a Web App and RESTful API Server Using the MEAN Stack
 https://devcenter.heroku.com/articles/mean-apps-restful-api
 npm install -g @angular/cli
-ng new app-name-here - create new angular app skeleton
+create new angular app skeleton
+ng new app-name-here
+
+add mLab mongodb
+heroku addons:create mongolab:sandbox
+mLab management web site
+heroku addons:open mongolab or go to heroku->app->addons
+mLab docs
+heroku addons:docs mongolab
+creates a config var, process.env.MONGODB_URI
+
+write server.js: basic connection, db pool creation
+extra libraries: npm install mongodb express body-parser --save
+
+
+
 
 
 
