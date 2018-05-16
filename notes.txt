@@ -1,4 +1,6 @@
+*******************************************************
 a Heroku app to take IFTTT webhooks, process them, and do something, and then possibly send a request back out to IFTTT
+*******************************************************
 
 todo: set up subdomain
 todo: from heroku app settings, get DNS record to make CNAME of heroku
@@ -23,13 +25,17 @@ creates a config var, process.env.MONGODB_URI
 write server.js: basic connection, db pool creation
 extra libraries: npm install mongodb express body-parser --save
 
+push and build to heroku, even when local isn't on master:
+git push heroku head:master
 
 
 
 
 
 
+*******************************************************
 beginning Node.js Heroku tutorial: https://devcenter.heroku.com/articles/getting-started-with-nodejs#set-up
+*******************************************************
 heroku login
 node --version: v8.11.1
 npm --version: 5.6.0
