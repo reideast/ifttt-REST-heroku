@@ -56,6 +56,8 @@ src/index.html
 
 npm install --save @angular/cli @angular/compiler-cli
 
+link up Angular app to Express (in server.js)
+
 
 
 *******************************************************
