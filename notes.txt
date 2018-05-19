@@ -40,7 +40,20 @@ ng generate component contacts/contact-details
 ng generate component contacts/contact-list
 ng generate service contacts/contact
 
-
+define Contact bean class:
+src/app/contacts/contact.ts
+create service layer to interact with REST api:
+src/app/contacts/contact.service.ts
+create contact list html template & application logic:
+src/app/contacts/contact-list/contact-list.component.html
+src/app/contacts/contact-list/contact-list.component.ts
+sub-template:
+src/app/contacts/contact-details/contact-details.component.html
+src/app/contacts/contact-details/contact-details.component.ts
+point main page at newly-created component:
+src/app/app.component.html
+add bootstrap to actual .html that will be served from '/'
+src/index.html
 
 
 
