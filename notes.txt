@@ -32,7 +32,6 @@ write rest endpoints in server.js
 test with cURL:
 curl -H "Content-Type: application/json" -d '{"name":"mLab Support", "email": "support@mlab.com"}' http://YOUR-APP-NAME.herokuapp.com/api/contacts
 
-
 generate Angular dir structure and contacts classes:
 mkdir src/app/contacts
 ng generate class contacts/contact
@@ -55,7 +54,7 @@ src/app/app.component.html
 add bootstrap to actual .html that will be served from '/'
 src/index.html
 
-
+npm install --save @angular/cli @angular/compiler-cli
 
 
 
