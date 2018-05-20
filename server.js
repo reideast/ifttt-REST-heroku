@@ -5,14 +5,19 @@ var ObjectID = mongodb.ObjectID;
 
 var CONTACTS_COLLECTION = 'contacts';
 
-// TODO: Move to ENV variable
-var API_USERS = [
-    {
-        "username": "deskase",
-        "key": "abcde12345",
-        "IFTTT_KEY": "SECRET"
-    }
-];
+/** Usernames and their API keys are stored in the Heroku Config Vars
+ * Config Var name: API_USERS
+ * schema: Array:
+ * [
+ *     {
+ *          "username": "username",
+ *          "key": "their api key for this service",
+ *          "IFTTT_KEY": "ifttt webhooks api key for this user"
+ *     },
+ *     ...
+ * ]
+ */
+var API_USERS = JSON.parse(process.env.API_USERS) || [];
 
 
 var app = express();
