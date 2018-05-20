@@ -51,16 +51,27 @@ function handleError(res, reason, message, code) {
 
 // IFTTT API ROUTES
 
+/**
+ * Helper function to authenticate users against API_USERS
+ * @param username String user identifier
+ * @param key String That user's API key
+ * @return String That user's IFTTT_KEY, or null if not valid
+ */
+function authenticate(username, key) {
+    var found = API_USERS.find(function (elem) {
+        return elem.username === username && elem.key === key;
+    });
+    if (found) {
+        return found.IFTTT_KEY;
+    } else {
+        return null;
+    }
+}
+
 // IFTTT Shopping List AND Parser
 app.post("/api/ifttt/shopping/and", function (req, res) {
     console.log("********************");
     console.log(req.body);
-    console.log("username:");
-    console.log(req.body.username);
-    console.log("key:");
-    console.log(req.body.key);
-    console.log("shoppingItems:");
-    console.log(req.body.shoppingItems);
     console.log("********************");
     if (!req.body.username) {
         handleError(res, "Invalid input: Missing username", "Must provide 'username'", 400);
@@ -69,6 +80,7 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
             handleError(res, "Invalid input: Missing key", "Must provide a user's 'key'", 400);
         } else {
             var userIftttKey = authenticate(req.body.username, req.body.key);
+            console.log("Authentication finished. Found: " + userIftttKey);
             if (!userIftttKey) {
                 handleError(res, "Unknown username and key", "The provided username and key were not valid", 401);
             } else {
