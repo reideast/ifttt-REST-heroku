@@ -1,4 +1,6 @@
+*******************************************************
 a Heroku app to take IFTTT webhooks, process them, and do something, and then possibly send a request back out to IFTTT
+*******************************************************
 
 todo: set up subdomain
 todo: from heroku app settings, get DNS record to make CNAME of heroku
@@ -9,12 +11,58 @@ todo: get webhook URLs on ifttt
 Create a Web App and RESTful API Server Using the MEAN Stack
 https://devcenter.heroku.com/articles/mean-apps-restful-api
 npm install -g @angular/cli
-ng new app-name-here - create new angular app skeleton
+create new angular app skeleton
+ng new app-name-here
+
+add mLab mongodb
+heroku addons:create mongolab:sandbox
+mLab management web site
+heroku addons:open mongolab or go to heroku->app->addons
+mLab docs
+heroku addons:docs mongolab
+creates a config var, process.env.MONGODB_URI
+
+write server.js: basic connection, db pool creation
+extra libraries: npm install mongodb express body-parser --save
+
+push and build to heroku, even when local isn't on master:
+git push heroku head:master
+
+write rest endpoints in server.js
+test with cURL:
+curl -H "Content-Type: application/json" -d '{"name":"mLab Support", "email": "support@mlab.com"}' http://YOUR-APP-NAME.herokuapp.com/api/contacts
+
+generate Angular dir structure and contacts classes:
+mkdir src/app/contacts
+ng generate class contacts/contact
+ng generate component contacts/contact-details
+ng generate component contacts/contact-list
+ng generate service contacts/contact
+
+define Contact bean class:
+src/app/contacts/contact.ts
+create service layer to interact with REST api:
+src/app/contacts/contact.service.ts
+create contact list html template & application logic:
+src/app/contacts/contact-list/contact-list.component.html
+src/app/contacts/contact-list/contact-list.component.ts
+sub-template:
+src/app/contacts/contact-details/contact-details.component.html
+src/app/contacts/contact-details/contact-details.component.ts
+point main page at newly-created component:
+src/app/app.component.html
+add bootstrap to actual .html that will be served from '/'
+src/index.html
+
+npm install --save @angular/cli @angular/compiler-cli
+
+link up Angular app to Express (in server.js)
 
 
 
-
+*******************************************************
 beginning Node.js Heroku tutorial: https://devcenter.heroku.com/articles/getting-started-with-nodejs#set-up
+*******************************************************
 heroku login
 node --version: v8.11.1
 npm --version: 5.6.0
