@@ -62,9 +62,9 @@ function handleError(res, reason, message, code) {
 
 /**
  * Helper function to authenticate users against API_USERS
- * @param username String user identifier
- * @param key String That user's API key
- * @return String That user's IFTTT_KEY, or {null} if not valid
+ * @param username {string} user identifier
+ * @param key {string} That user's API key
+ * @return {string|null} That user's IFTTT_KEY, or {null} if not valid
  */
 function authenticate(username, key) {
     var found = API_USERS.find(function (elem) {
@@ -132,8 +132,8 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
 
 /**
  * Split a string on each and/AND found
- * @param str String Text that may contain the word and/AND
- * @return Array An list of items split
+ * @param str {string} Text that may contain the word and/AND
+ * @return {array} An list of items split
  */
 function splitOnAnd(str) {
     var phrases = [];
@@ -160,17 +160,6 @@ function splitOnAnd(str) {
  * @param item {string} The grocery item to examine
  * @return {string} A comma-separated list of tags, or "" if none identified
  */
-var TRELLO_TAGS = {
-    produce: 'Produce',
-    refrig: 'Frozen Refrigerated Dairy',
-    pantry: 'Dry Goods',
-    cleaningSupplies: 'Home Goods',
-    pets: 'Pet Store',
-    clothes: 'Clothes',
-    hardware: 'Hardware Store',
-    hipster: 'Local Market',
-    discount: 'Euro Store'
-};
 function searchGroceryTags(item) {
     item = item.toLowerCase();
     var tags = [];
@@ -182,6 +171,17 @@ function searchGroceryTags(item) {
     }
     return tags.join(',');
 }
+var TRELLO_TAGS = {
+    produce: 'Produce',
+    refrig: 'Frozen Refrigerated Dairy',
+    pantry: 'Dry Goods',
+    cleaningSupplies: 'Home Goods',
+    pets: 'Pet Store',
+    clothes: 'Clothes',
+    hardware: 'Hardware Store',
+    hipster: 'Local Market',
+    discount: 'Euro Store'
+};
 
 // CONTACTS API ROUTES BELOW
 
