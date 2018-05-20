@@ -5,6 +5,16 @@ var ObjectID = mongodb.ObjectID;
 
 var CONTACTS_COLLECTION = 'contacts';
 
+// TODO: Move to ENV variable
+var API_USERS = [
+    {
+        "username": "deskase",
+        "key": "abcde12345",
+        "IFTTT_KEY": "SECRET"
+    }
+];
+
+
 var app = express();
 app.use(bodyParser.json());
 
@@ -33,13 +43,48 @@ mongodb.MongoClient.connect(process.env.MONGODB_URI || "mongodb://localhost:2701
     });
 });
 
-// CONTACTS API ROUTES BELOW
-
 // Generic error handler used by all endpoints.
 function handleError(res, reason, message, code) {
-    console.log("ERROR: " + reason);
+    console.log("ERROR " + code + ": '" + reason + "', Message: '" + message + "'");
     res.status(code || 500).json({"error": message});
 }
+
+// IFTTT API ROUTES
+
+// IFTTT Shopping List AND Parser
+app.post("/api/ifttt/shopping/and", function (req, res) {
+    console.log("********************");
+    console.log(req.body);
+    console.log("username:");
+    console.log(req.body.username);
+    console.log("key:");
+    console.log(req.body.key);
+    console.log("shoppingItems:");
+    console.log(req.body.shoppingItems);
+    console.log("********************");
+    if (!req.body.username) {
+        handleError(res, "Invalid input: Missing username", "Must provide 'username'", 400);
+    } else {
+        if (!req.body.key) {
+            handleError(res, "Invalid input: Missing key", "Must provide a user's 'key'", 400);
+        } else {
+            var userIftttKey = authenticate(req.body.username, req.body.key);
+            if (!userIftttKey) {
+                handleError(res, "Unknown username and key", "The provided username and key were not valid", 401);
+            } else {
+                if (!req.body.shoppingItems) {
+                    handleError(res, "Invalid input: Missing shoppingItems", "Must provide data in the 'shoppingItems' for this API endpoint", 400);
+                } else {
+                    var shoppingItems = req.body.shoppingItems;
+
+                    res.status(200).json(shoppingItems);
+                }
+            }
+        }
+    }
+});
+
+// CONTACTS API ROUTES BELOW
 
 /*  "/api/contacts"
  *    GET: finds all contacts
