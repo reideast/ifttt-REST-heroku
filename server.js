@@ -2,6 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var mongodb = require('mongodb');
 var ObjectID = mongodb.ObjectID;
+var request = require('request');
 
 var CONTACTS_COLLECTION = 'contacts';
 
@@ -18,6 +19,9 @@ var CONTACTS_COLLECTION = 'contacts';
  * ]
  */
 var API_USERS = JSON.parse(process.env.API_USERS) || [];
+
+var IFTTT_EVENT_NAME = 'list-shopping-return';
+var URL_BASE = "https://maker.ifttt.com/trigger/" + IFTTT_EVENT_NAME + "/with/key/"; // + "IFTTT API key"
 
 
 var app = express();
@@ -78,23 +82,50 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
     console.log("********************");
     console.log(req.body);
     console.log("********************");
-    if (!req.body.username) {
-        handleError(res, "Invalid input: Missing username", "Must provide 'username'", 400);
+    if (!req.body.shoppingItems) {
+        handleError(res, "Invalid input: Missing shoppingItems", "Must provide data in the 'shoppingItems' for this API endpoint", 400);
     } else {
-        if (!req.body.key) {
-            handleError(res, "Invalid input: Missing key", "Must provide a user's 'key'", 400);
+        if (!req.body.username) {
+            handleError(res, "Invalid input: Missing username", "Must provide 'username'", 400);
         } else {
-            var userIftttKey = authenticate(req.body.username, req.body.key);
-            console.log("Authentication finished. Found: " + userIftttKey);
-            if (!userIftttKey) {
-                handleError(res, "Unknown username and key", "The provided username and key were not valid", 401);
+            if (!req.body.key) {
+                handleError(res, "Invalid input: Missing key", "Must provide a user's 'key'", 400);
             } else {
-                if (!req.body.shoppingItems) {
-                    handleError(res, "Invalid input: Missing shoppingItems", "Must provide data in the 'shoppingItems' for this API endpoint", 400);
+                var userIftttKey = authenticate(req.body.username, req.body.key);
+                console.log("Authentication finished. Found: " + userIftttKey);
+                if (!userIftttKey) {
+                    handleError(res, "Unknown username and key", "The provided username and key were not valid", 401);
                 } else {
                     var shoppingItems = req.body.shoppingItems;
 
-                    res.status(200).json(shoppingItems);
+                    // TODO: parse shoppingItems into an array of strings, each split on "AND"
+                    var items = [shoppingItems]; // TODO: dummy array
+
+                    items.forEach(function (item) {
+                        // var itemJson = JSON.stringify({
+                        var itemJson = { // IFTTT JSON Format: Value1,2,3
+                            value1: item, // Text of the Trello card
+                            value2: "Frozen Refrigerated Dairy", // Optional Trello Tags
+                            value3: ""
+                        };
+                        console.log("About to send: ", itemJson);
+
+                        request({
+                            url: URL_BASE + userIftttKey,
+                            method: "POST",
+                            json: true,
+                            body: itemJson
+                        }, function (err, subResponse, body) {
+                            if (err) {
+                                console.log("ERROR " + subResponse.statusCode + " while sending request for shopping item: ", itemJson);
+                                console.log(err);
+                            } else {
+                                console.log("Request successful: " + subResponse.statusCode + " " + subResponse.statusMessage + ": " + body);
+                            }
+                        });
+                    });
+
+                    res.status(200).json({items: items});
                 }
             }
         }
