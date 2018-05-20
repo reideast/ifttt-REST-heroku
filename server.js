@@ -100,7 +100,7 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
                     var items = splitOnAnd(req.body.shoppingItems);
 
                     items.forEach(function (item) {
-                        var tags = ""; // TODO: Optional Trello Tags
+                        var tags = searchGroceryTags(item); // Optional Trello Tags
                         var itemJson = { // IFTTT JSON Format: Value1,2,3
                             value1: item, // Text of the Trello card
                             value2: "ParsedByApi, " + tags,
@@ -153,6 +153,34 @@ function splitOnAnd(str) {
         }
     }
     return phrases;
+}
+
+/**
+ * Intelligently assign tags to a grocery shopping item
+ * @param item {string} The grocery item to examine
+ * @return {string} A comma-separated list of tags, or "" if none identified
+ */
+var TRELLO_TAGS = {
+    produce: 'Produce',
+    refrig: 'Frozen Refrigerated Dairy',
+    pantry: 'Dry Goods',
+    cleaningSupplies: 'Home Goods',
+    pets: 'Pet Store',
+    clothes: 'Clothes',
+    hardware: 'Hardware Store',
+    hipster: 'Local Market',
+    discount: 'Euro Store'
+};
+function searchGroceryTags(item) {
+    item = item.toLowerCase();
+    var tags = [];
+    if (item.indexOf('milk') !== -1) {
+        tags.push(TRELLO_TAGS.refrig)
+    }
+    if (item.indexOf('cream') !== -1) {
+        tags.push(TRELLO_TAGS.refrig)
+    }
+    return tags.join(',');
 }
 
 // CONTACTS API ROUTES BELOW
