@@ -169,6 +169,33 @@ function searchGroceryTags(item) {
     if (item.indexOf('cream') !== -1) {
         tags.push(TRELLO_TAGS.refrig)
     }
+    if (item.indexOf('cheese') !== -1) {
+        tags.push(TRELLO_TAGS.refrig)
+    }
+    if (item.indexOf('walnut') !== -1) {
+        tags.push(TRELLO_TAGS.pantry)
+    }
+    if (item.indexOf('pepperoni') !== -1) {
+        tags.push(TRELLO_TAGS.refrig)
+    }
+    if (item.indexOf('tortillas') !== -1) {
+        tags.push(TRELLO_TAGS.pantry)
+    }
+    if (item.indexOf('lettuce') !== -1) {
+        tags.push(TRELLO_TAGS.produce)
+    }
+    if (item.indexOf('bread') !== -1) {
+        tags.push(TRELLO_TAGS.pantry)
+    }
+    if (item.indexOf('chicken') !== -1) {
+        tags.push(TRELLO_TAGS.refrig)
+    }
+    if (item.indexOf('muffin') !== -1) {
+        tags.push(TRELLO_TAGS.pantry)
+    }
+    if (item.indexOf('peanut') !== -1) {
+        tags.push(TRELLO_TAGS.pantry)
+    }
     return tags.join(',');
 }
 var TRELLO_TAGS = {
@@ -180,7 +207,8 @@ var TRELLO_TAGS = {
     clothes: 'Clothes',
     hardware: 'Hardware Store',
     hipster: 'Local Market',
-    discount: 'Euro Store'
+    discount: 'Euro Store',
+    personal: 'Personal Care'
 };
 
 // CONTACTS API ROUTES BELOW
