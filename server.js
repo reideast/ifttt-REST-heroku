@@ -3,6 +3,7 @@ var bodyParser = require('body-parser');
 var mongodb = require('mongodb');
 var ObjectID = mongodb.ObjectID;
 var request = require('request');
+var sanitizer = require('sanitize')();
 
 var CONTACTS_COLLECTION = 'contacts';
 
@@ -104,7 +105,8 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
                     handleError(res, "Unknown username and key", "The provided username and key were not valid", 401);
                 } else {
                     // Parse shoppingItems into an array of strings, each split on "AND"
-                    var items = splitOnAnd(req.body.shoppingItems);
+                    var shoppingItems = sanitizer.value(req.body.shoppingItems, 'str');
+                    var items = splitOnAnd(shoppingItems);
 
                     // TODO: wait an increasing number of seconds between each of these items in the forEach
                     items.forEach(function(item) {

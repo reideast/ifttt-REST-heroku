@@ -29,6 +29,7 @@
     "mongodb": "^3.1.0-beta4",
     "request": "^2.86.0",
     "rxjs": "^6.0.0",
+    "sanitize": "^2.1.0",
     "zone.js": "^0.8.26"
   },
   "devDependencies": {
