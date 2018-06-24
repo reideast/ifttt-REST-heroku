@@ -127,31 +127,15 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
  */
 function processItem(item, userIftttKey) {
   var trelloLabels = searchGroceryTags(item); // Optional Trello Tags/Labels
-  var itemJson = { // IFTTT JSON Format: Value1,2,3
+  var jsonPayload = { // IFTTT JSON Format: Value1,2,3
     value1: item, // Text of the Trello card
     value2: "ParsedByApi, " + trelloLabels,
     value3: ""
   };
-  console.log("About to send: ", itemJson);
+  console.log("About to send: ", jsonPayload);
 
-  console.log("DEBUG: Starting a delay before " + item + " is sent");
-  addItemToQueue();
-  setTimeout(function() {
-    request({
-      url: URL_BASE + userIftttKey,
-      method: "POST",
-      json: true,
-      body: itemJson
-    }, function (err, subResponse, body) {
-      if (err) {
-        console.log("ERROR " + subResponse.statusCode + " while sending request for shopping item: ", itemJson);
-        console.log(err);
-      } else {
-        console.log("Request successful: " + subResponse.statusCode + " " + subResponse.statusMessage + ": " + body);
-      }
-    });
-    removeItemFromQueue();
-  }, getRequestBasedOnCurrentQueue());
+  console.log("DEBUG: Adding " + item + " to the delay queue");
+  addItemToQueue({jsonPayload: jsonPayload, userIftttKey: userIftttKey});
 }
 
 /**
@@ -161,18 +145,59 @@ function processItem(item, userIftttKey) {
  * @return (number) Minimum number of milliseconds to wait to request to ensure this item will be sent at minimum OUTGOING_REQUEST_DELAY after any others
  * NOTE: Side effect: updates itemsQueueToBeSent, essentially "enqueuing" one item
  */
-function getRequestBasedOnCurrentQueue() {
-  return itemsQueuedToBeSent * OUTGOING_REQUEST_DELAY;
-}
-function addItemToQueue() {
+// function getRequestBasedOnCurrentQueue() {
+//   return itemsQueuedToBeSent * OUTGOING_REQUEST_DELAY;
+// }
+function addItemToQueue(payloadAndKey) {
   itemsQueuedToBeSent += 1;
   console.log("DEBUG: One should have been enqueued: " + itemsQueuedToBeSent);
+
+  sendQueue.push(payloadAndKey);
+  console.log(sendQueue);
+
+  if (timeoutHandle === null) {
+    timeoutHandle = setTimeout(processOneItemOrStopProcessing, OUTGOING_REQUEST_DELAY);
+  } // else, the timeout is already going, and will keep repeating as long as there are items to be dequeued
 }
-function removeItemFromQueue() {
-  itemsQueuedToBeSent -= 1;
-  console.log("DEBUG: Dequeued. Queue length is now " + itemsQueuedToBeSent);
-}
+// function removeItemFromQueue() {
+//   itemsQueuedToBeSent -= 1;
+//   console.log("DEBUG: Dequeued. Queue length is now " + itemsQueuedToBeSent);
+// }
 var itemsQueuedToBeSent = 0;
+var sendQueue = [];
+var timeoutHandle = null;
+
+function processOneItemOrStopProcessing() {
+  if (sendQueue.length === 0) {
+    timeoutHandle = null;
+    console.log("Timeout processing done. Queue is empty");
+  } else {
+    // var [jsonPayload, userIftttKey] = queue.shift();
+    var payloadAndKey = sendQueue.shift();
+    itemsQueuedToBeSent -= 1;
+    console.log("Sending payload:");
+    console.log(payloadAndKey.jsonPayload);
+    console.log("And now queue is:");
+    console.log(sendQueue);
+    request({
+      url: URL_BASE + payloadAndKey.userIftttKey,
+      method: "POST",
+      json: true,
+      body: payloadAndKey.jsonPayload
+    }, function (err, subResponse, body) {
+      if (err) {
+        console.log("ERROR " + subResponse.statusCode + " while sending request for shopping item: ", payloadAndKey.jsonPayload);
+        console.log(err);
+      } else {
+        console.log("Request successful: " + subResponse.statusCode + " " + subResponse.statusMessage + ": " + body);
+      }
+    });
+
+    // Repeat the processing. Note: repeat even if there are none left in the queue. This feels like a guard against a race condition on enqueuing one item and then starting a new timeout, but node.js is single-threaded so that really isn't a think. This isn't even the right way to do it if this was multi-threaded code...
+    timeoutHandle = setTimeout(processOneItemOrStopProcessing, OUTGOING_REQUEST_DELAY);
+    console.log("Item finished, starting a new wait");
+  }
+}
 
 /**
  * Split a string on each and/AND found
