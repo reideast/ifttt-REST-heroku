@@ -23,6 +23,13 @@ var API_USERS = JSON.parse(process.env.API_USERS) || [];
 var IFTTT_EVENT_NAME = 'list-shopping-return';
 var URL_BASE = "https://maker.ifttt.com/trigger/" + IFTTT_EVENT_NAME + "/with/key/"; // + "IFTTT API key"
 
+/**
+ * An artificial delay between each outgoing request to IFTTT WebHooks.
+ * An attempt to be polite to the IFTTT maker endpoints (and to not get rate-limited).
+ * @type {number}
+ */
+var OUTGOING_REQUEST_DELAY = 10000;
+
 
 var app = express();
 app.use(bodyParser.json());
@@ -99,28 +106,9 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
                     // Parse shoppingItems into an array of strings, each split on "AND"
                     var items = splitOnAnd(req.body.shoppingItems);
 
-                    items.forEach(function (item) {
-                        var tags = searchGroceryTags(item); // Optional Trello Tags
-                        var itemJson = { // IFTTT JSON Format: Value1,2,3
-                            value1: item, // Text of the Trello card
-                            value2: "ParsedByApi, " + tags,
-                            value3: ""
-                        };
-                        console.log("About to send: ", itemJson);
-
-                        request({
-                            url: URL_BASE + userIftttKey,
-                            method: "POST",
-                            json: true,
-                            body: itemJson
-                        }, function (err, subResponse, body) {
-                            if (err) {
-                                console.log("ERROR " + subResponse.statusCode + " while sending request for shopping item: ", itemJson);
-                                console.log(err);
-                            } else {
-                                console.log("Request successful: " + subResponse.statusCode + " " + subResponse.statusMessage + ": " + body);
-                            }
-                        });
+                    // TODO: wait an increasing number of seconds between each of these items in the forEach
+                    items.forEach(function(item) {
+                      processItem(item, userIftttKey);
                     });
 
                     res.status(200).json({items: items});
@@ -129,6 +117,38 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
         }
     }
 });
+
+/**
+ * Send a request to the IFTTT service to save a single item to the Trello shopping list
+ * @param item (string) The item to send to Trello
+ * @param userIftttKey (string) An IFTTT user's API key. Identifies the user to the IFTTT service. Sent in POST URL
+ */
+function processItem(item, userIftttKey) {
+  var trelloLabels = searchGroceryTags(item); // Optional Trello Tags/Labels
+  var itemJson = { // IFTTT JSON Format: Value1,2,3
+    value1: item, // Text of the Trello card
+    value2: "ParsedByApi, " + trelloLabels,
+    value3: ""
+  };
+  console.log("About to send: ", itemJson);
+
+  console.log("DEBUG: Starting a delay before " + item + " is sent");
+  setTimeout(function() {
+    request({
+      url: URL_BASE + userIftttKey,
+      method: "POST",
+      json: true,
+      body: itemJson
+    }, function (err, subResponse, body) {
+      if (err) {
+        console.log("ERROR " + subResponse.statusCode + " while sending request for shopping item: ", itemJson);
+        console.log(err);
+      } else {
+        console.log("Request successful: " + subResponse.statusCode + " " + subResponse.statusMessage + ": " + body);
+      }
+    });
+  }, OUTGOING_REQUEST_DELAY);
+}
 
 /**
  * Split a string on each and/AND found
