@@ -135,6 +135,7 @@ function processItem(item, userIftttKey) {
   console.log("About to send: ", itemJson);
 
   console.log("DEBUG: Starting a delay before " + item + " is sent");
+  addItemToQueue();
   setTimeout(function() {
     request({
       url: URL_BASE + userIftttKey,
@@ -149,8 +150,29 @@ function processItem(item, userIftttKey) {
         console.log("Request successful: " + subResponse.statusCode + " " + subResponse.statusMessage + ": " + body);
       }
     });
-  }, OUTGOING_REQUEST_DELAY);
+    removeItemFromQueue();
+  }, getRequestBasedOnCurrentQueue());
 }
+
+/**
+ * Return a delay in milliseconds that a request should wait.
+ * Provides a simple queueing mechanism, just to prevent too many requests from going at once.
+ * For this to work, there must ALWAYS be a delay, even for the first item. Else, each item would immediately send, and then be "dequeued"...meaning the next item would also have no delay
+ * @return (number) Minimum number of milliseconds to wait to request to ensure this item will be sent at minimum OUTGOING_REQUEST_DELAY after any others
+ * NOTE: Side effect: updates itemsQueueToBeSent, essentially "enqueuing" one item
+ */
+function getRequestBasedOnCurrentQueue() {
+  return itemsQueuedToBeSent * OUTGOING_REQUEST_DELAY;
+}
+function addItemToQueue() {
+  itemsQueuedToBeSent += 1;
+  console.log("DEBUG: One should have been enqueued: " + itemsQueuedToBeSent);
+}
+function removeItemFromQueue() {
+  itemsQueuedToBeSent -= 1;
+  console.log("DEBUG: Dequeued. Queue length is now " + itemsQueuedToBeSent);
+}
+var itemsQueuedToBeSent = 0;
 
 /**
  * Split a string on each and/AND found
