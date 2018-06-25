@@ -3,6 +3,7 @@ var bodyParser = require('body-parser');
 var mongodb = require('mongodb');
 var ObjectID = mongodb.ObjectID;
 var request = require('request');
+var sanitizer = require('sanitize')();
 
 var CONTACTS_COLLECTION = 'contacts';
 
@@ -22,6 +23,13 @@ var API_USERS = JSON.parse(process.env.API_USERS) || [];
 
 var IFTTT_EVENT_NAME = 'list-shopping-return';
 var URL_BASE = "https://maker.ifttt.com/trigger/" + IFTTT_EVENT_NAME + "/with/key/"; // + "IFTTT API key"
+
+/**
+ * An artificial delay between each outgoing request to IFTTT WebHooks.
+ * An attempt to be polite to the IFTTT maker endpoints (and to not get rate-limited).
+ * @type {number}
+ */
+var OUTGOING_REQUEST_DELAY = 10000;
 
 
 var app = express();
@@ -97,30 +105,12 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
                     handleError(res, "Unknown username and key", "The provided username and key were not valid", 401);
                 } else {
                     // Parse shoppingItems into an array of strings, each split on "AND"
-                    var items = splitOnAnd(req.body.shoppingItems);
+                    var shoppingItems = sanitizer.value(req.body.shoppingItems, 'str');
+                    var items = splitOnAnd(shoppingItems);
 
-                    items.forEach(function (item) {
-                        var tags = searchGroceryTags(item); // Optional Trello Tags
-                        var itemJson = { // IFTTT JSON Format: Value1,2,3
-                            value1: item, // Text of the Trello card
-                            value2: "ParsedByApi, " + tags,
-                            value3: ""
-                        };
-                        console.log("About to send: ", itemJson);
-
-                        request({
-                            url: URL_BASE + userIftttKey,
-                            method: "POST",
-                            json: true,
-                            body: itemJson
-                        }, function (err, subResponse, body) {
-                            if (err) {
-                                console.log("ERROR " + subResponse.statusCode + " while sending request for shopping item: ", itemJson);
-                                console.log(err);
-                            } else {
-                                console.log("Request successful: " + subResponse.statusCode + " " + subResponse.statusMessage + ": " + body);
-                            }
-                        });
+                    // TODO: wait an increasing number of seconds between each of these items in the forEach
+                    items.forEach(function(item) {
+                      processItem(item, userIftttKey);
                     });
 
                     res.status(200).json({items: items});
@@ -129,6 +119,85 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
         }
     }
 });
+
+/**
+ * Send a request to the IFTTT service to save a single item to the Trello shopping list
+ * @param item (string) The item to send to Trello
+ * @param userIftttKey (string) An IFTTT user's API key. Identifies the user to the IFTTT service. Sent in POST URL
+ */
+function processItem(item, userIftttKey) {
+  var trelloLabels = searchGroceryTags(item); // Optional Trello Tags/Labels
+  var jsonPayload = { // IFTTT JSON Format: Value1,2,3
+    value1: item, // Text of the Trello card
+    value2: "ParsedByApi, " + trelloLabels,
+    value3: ""
+  };
+  console.log("About to send: ", jsonPayload);
+
+  console.log("DEBUG: Adding " + item + " to the delay queue");
+  addItemToQueue({jsonPayload: jsonPayload, userIftttKey: userIftttKey});
+}
+
+/**
+ * Return a delay in milliseconds that a request should wait.
+ * Provides a simple queueing mechanism, just to prevent too many requests from going at once.
+ * For this to work, there must ALWAYS be a delay, even for the first item. Else, each item would immediately send, and then be "dequeued"...meaning the next item would also have no delay
+ * @return (number) Minimum number of milliseconds to wait to request to ensure this item will be sent at minimum OUTGOING_REQUEST_DELAY after any others
+ * NOTE: Side effect: updates itemsQueueToBeSent, essentially "enqueuing" one item
+ */
+// function getRequestBasedOnCurrentQueue() {
+//   return itemsQueuedToBeSent * OUTGOING_REQUEST_DELAY;
+// }
+function addItemToQueue(payloadAndKey) {
+  itemsQueuedToBeSent += 1;
+  console.log("DEBUG: One should have been enqueued: " + itemsQueuedToBeSent);
+
+  sendQueue.push(payloadAndKey);
+  console.log(sendQueue);
+
+  if (timeoutHandle === null) {
+    timeoutHandle = setTimeout(processOneItemOrStopProcessing, OUTGOING_REQUEST_DELAY);
+  } // else, the timeout is already going, and will keep repeating as long as there are items to be dequeued
+}
+// function removeItemFromQueue() {
+//   itemsQueuedToBeSent -= 1;
+//   console.log("DEBUG: Dequeued. Queue length is now " + itemsQueuedToBeSent);
+// }
+var itemsQueuedToBeSent = 0;
+var sendQueue = [];
+var timeoutHandle = null;
+
+function processOneItemOrStopProcessing() {
+  if (sendQueue.length === 0) {
+    timeoutHandle = null;
+    console.log("Timeout processing done. Queue is empty");
+  } else {
+    // var [jsonPayload, userIftttKey] = queue.shift();
+    var payloadAndKey = sendQueue.shift();
+    itemsQueuedToBeSent -= 1;
+    console.log("Sending payload:");
+    console.log(payloadAndKey.jsonPayload);
+    console.log("And now queue is:");
+    console.log(sendQueue);
+    request({
+      url: URL_BASE + payloadAndKey.userIftttKey,
+      method: "POST",
+      json: true,
+      body: payloadAndKey.jsonPayload
+    }, function (err, subResponse, body) {
+      if (err) {
+        console.log("ERROR " + subResponse.statusCode + " while sending request for shopping item: ", payloadAndKey.jsonPayload);
+        console.log(err);
+      } else {
+        console.log("Request successful: " + subResponse.statusCode + " " + subResponse.statusMessage + ": " + body);
+      }
+    });
+
+    // Repeat the processing. Note: repeat even if there are none left in the queue. This feels like a guard against a race condition on enqueuing one item and then starting a new timeout, but node.js is single-threaded so that really isn't a think. This isn't even the right way to do it if this was multi-threaded code...
+    timeoutHandle = setTimeout(processOneItemOrStopProcessing, OUTGOING_REQUEST_DELAY);
+    console.log("Item finished, starting a new wait");
+  }
+}
 
 /**
  * Split a string on each and/AND found
