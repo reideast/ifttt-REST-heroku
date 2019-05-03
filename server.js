@@ -129,7 +129,7 @@ function processItem(item, userIftttKey) {
   var trelloLabels = searchGroceryTags(item); // Optional Trello Tags/Labels
   var jsonPayload = { // IFTTT JSON Format: Value1,2,3
     value1: item, // Text of the Trello card
-    value2: "ParsedByApi, " + trelloLabels,
+    value2: trelloLabels,
     value3: ""
   };
   console.log("About to send: ", jsonPayload);
