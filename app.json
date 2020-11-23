@@ -1,12 +1,9 @@
 {
   "name": "REST API for IFTTT Webhooks",
-  "description": "API using MEAN",
+  "description": "API using Express",
   "keywords": [
-    "MEAN",
-    "Angular",
     "Node",
-    "MongoDB",
-    "mLab"
+    "Express"
   ],
   "repository": "https://github.com/reideast/ifttt-REST-heroku",
   "success_url": "/",
@@ -16,7 +13,5 @@
       "size": "free"
     }
   },
-  "addons": [
-    "mongolab"
-  ]
+  "addons": []
 }
