@@ -2,13 +2,7 @@
   "name": "ifttt-rest-heroku",
   "version": "0.1.2",
   "scripts": {
-    "ng": "ng",
-    "start": "node server.js",
-    "build": "ng build",
-    "test": "ng test",
-    "lint": "ng lint",
-    "e2e": "ng e2e",
-    "postinstall": "ng build"
+    "start": "node server.js"
   },
   "private": true,
   "dependencies": {
