@@ -1,11 +1,7 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var mongodb = require('mongodb');
-var ObjectID = mongodb.ObjectID;
-var request = require('request');
-var sanitizer = require('sanitize')();
-
-var CONTACTS_COLLECTION = 'contacts';
+const express = require('express');
+const bodyParser = require('body-parser');
+const request = require('request');
+const sanitizer = require('sanitize')();
 
 /** Usernames and their API keys are stored in the Heroku Config Vars
  * Config Var name: API_USERS
@@ -19,45 +15,30 @@ var CONTACTS_COLLECTION = 'contacts';
  *     ...
  * ]
  */
-var API_USERS = JSON.parse(process.env.API_USERS) || [];
+const API_USERS = JSON.parse(process.env.API_USERS) || [];
 
-var IFTTT_EVENT_NAME = 'list-shopping-return';
-var URL_BASE = "https://maker.ifttt.com/trigger/" + IFTTT_EVENT_NAME + "/with/key/"; // + "IFTTT API key"
+const IFTTT_EVENT_NAME = 'list-shopping-return';
+const URL_BASE = "https://maker.ifttt.com/trigger/" + IFTTT_EVENT_NAME + "/with/key/"; // + "IFTTT API key"
 
 /**
  * An artificial delay between each outgoing request to IFTTT WebHooks.
  * An attempt to be polite to the IFTTT maker endpoints (and to not get rate-limited).
  * @type {number}
  */
-var OUTGOING_REQUEST_DELAY = 10000;
+const OUTGOING_REQUEST_DELAY = 10000;
 
 
-var app = express();
+const app = express();
 app.use(bodyParser.json());
 
 // Create link to Angular build dir dist/
-var distDir = __dirname + '/dist/';
+const distDir = __dirname + '/dist/';
 app.use(express.static(distDir));
 
-// Create a database variable outside of the database connection callback to reuse the connection pool in your app.
-var db;
-
-// Connect to database before app server starts
-mongodb.MongoClient.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/test", function (err, client) {
-    if (err) {
-        console.log(err);
-        process.exit(1);
-    }
-
-    // save db object for use once the callback finishes
-    db = client.db();
-    console.log("DB connection ready");
-
-    // Now, start the app
-    var server = app.listen(process.env.PORT || 8080, function () {
-        var port = server.address().port;
-        console.log("App now running on port:", port);
-    });
+// Start the app server
+const server = app.listen(process.env.PORT || 8080, function () {
+    const port = server.address().port;
+    console.log("App now running on port:", port);
 });
 
 // Generic error handler used by all endpoints.
@@ -75,7 +56,7 @@ function handleError(res, reason, message, code) {
  * @return {string|null} That user's IFTTT_KEY, or {null} if not valid
  */
 function authenticate(username, key) {
-    var found = API_USERS.find(function (elem) {
+    const found = API_USERS.find(function (elem) {
         return elem.username === username && elem.key === key;
     });
     if (found) {
@@ -99,14 +80,14 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
             if (!req.body.key) {
                 handleError(res, "Invalid input: Missing key", "Must provide a user's 'key'", 400);
             } else {
-                var userIftttKey = authenticate(req.body.username, req.body.key);
+                const userIftttKey = authenticate(req.body.username, req.body.key);
                 console.log("Authentication finished. Found user's IFTTT API key: " + userIftttKey);
                 if (!userIftttKey) {
                     handleError(res, "Unknown username and key", "The provided username and key were not valid", 401);
                 } else {
                     // Parse shoppingItems into an array of strings, each split on "AND"
-                    var shoppingItems = sanitizer.value(req.body.shoppingItems, 'str');
-                    var items = splitOnAnd(shoppingItems);
+                    const shoppingItems = sanitizer.value(req.body.shoppingItems, 'str');
+                    const items = splitOnAnd(shoppingItems);
 
                     // TODO: wait an increasing number of seconds between each of these items in the forEach
                     items.forEach(function(item) {
@@ -126,8 +107,8 @@ app.post("/api/ifttt/shopping/and", function (req, res) {
  * @param userIftttKey (string) An IFTTT user's API key. Identifies the user to the IFTTT service. Sent in POST URL
  */
 function processItem(item, userIftttKey) {
-  var trelloLabels = searchGroceryTags(item); // Optional Trello Tags/Labels
-  var jsonPayload = { // IFTTT JSON Format: Value1,2,3
+  const trelloLabels = searchGroceryTags(item); // Optional Trello Tags/Labels
+  const jsonPayload = { // IFTTT JSON Format: Value1,2,3
     value1: item, // Text of the Trello card
     value2: trelloLabels,
     value3: ""
@@ -163,17 +144,17 @@ function addItemToQueue(payloadAndKey) {
 //   itemsQueuedToBeSent -= 1;
 //   console.log("DEBUG: Dequeued. Queue length is now " + itemsQueuedToBeSent);
 // }
-var itemsQueuedToBeSent = 0;
-var sendQueue = [];
-var timeoutHandle = null;
+let itemsQueuedToBeSent = 0;
+let sendQueue = [];
+let timeoutHandle = null;
 
 function processOneItemOrStopProcessing() {
   if (sendQueue.length === 0) {
     timeoutHandle = null;
     console.log("Timeout processing done. Queue is empty");
   } else {
-    // var [jsonPayload, userIftttKey] = queue.shift();
-    var payloadAndKey = sendQueue.shift();
+    // const [jsonPayload, userIftttKey] = queue.shift();
+    const payloadAndKey = sendQueue.shift();
     itemsQueuedToBeSent -= 1;
     console.log("Sending payload:");
     console.log(payloadAndKey.jsonPayload);
@@ -205,10 +186,10 @@ function processOneItemOrStopProcessing() {
  * @return {array} An list of items split
  */
 function splitOnAnd(str) {
-    var phrases = [];
+    const phrases = [];
     if (str) { // Protects against null, undefined, and ""
-        var words = str.split(' ');
-        var startOfPhrase = 0;
+        const words = str.split(' ');
+        let startOfPhrase = 0;
         words.forEach(function (word, index) {
             if (word.toLowerCase() === 'and') {
                 if (index - startOfPhrase > 0) { // multiple ands in a row
@@ -231,7 +212,7 @@ function splitOnAnd(str) {
  */
 function searchGroceryTags(item) {
     item = item.toLowerCase();
-    var tags = [];
+    const tags = [];
     if (item.indexOf('milk') !== -1) {
         tags.push(TRELLO_TAGS.refrig)
     }
@@ -267,7 +248,7 @@ function searchGroceryTags(item) {
     }
     return tags.join(',');
 }
-var TRELLO_TAGS = {
+const TRELLO_TAGS = {
     produce: 'Produce',
     refrig: 'Frozen Refrigerated Dairy',
     pantry: 'Dry Goods',
@@ -279,77 +260,3 @@ var TRELLO_TAGS = {
     discount: 'Euro Store',
     personal: 'Personal Care'
 };
-
-// CONTACTS API ROUTES BELOW
-
-/*  "/api/contacts"
- *    GET: finds all contacts
- *    POST: creates a new contact
- */
-
-app.get("/api/contacts", function(req, res) {
-    db.collection(CONTACTS_COLLECTION).find({}).toArray(function(err, docs) {
-        if (err) {
-            handleError(res, err.message, "Failed to get contacts.");
-        } else {
-            res.status(200).json(docs);
-        }
-    });
-});
-
-app.post("/api/contacts", function(req, res) {
-    var newContact = req.body;
-    newContact.createDate = new Date();
-
-    if (!req.body.name) {
-        handleError(res, "Invalid user input", "Must provide a name.", 400);
-    }
-
-    db.collection(CONTACTS_COLLECTION).insertOne(newContact, function(err, doc) {
-        if (err) {
-            handleError(res, err.message, "Failed to create new contact.");
-        } else {
-            res.status(201).json(doc.ops[0]);
-        }
-    });
-});
-
-/*  "/api/contacts/:id"
- *    GET: find contact by id
- *    PUT: update contact by id
- *    DELETE: deletes contact by id
- */
-
-app.get("/api/contacts/:id", function(req, res) {
-    db.collection(CONTACTS_COLLECTION).findOne({ _id: new ObjectID(req.params.id) }, function(err, doc) {
-        if (err) {
-            handleError(res, err.message, "Failed to get contact");
-        } else {
-            res.status(200).json(doc);
-        }
-    });
-});
-
-app.put("/api/contacts/:id", function(req, res) {
-    var updateDoc = req.body;
-    delete updateDoc._id;
-
-    db.collection(CONTACTS_COLLECTION).updateOne({_id: new ObjectID(req.params.id)}, updateDoc, function(err, doc) {
-        if (err) {
-            handleError(res, err.message, "Failed to update contact");
-        } else {
-            updateDoc._id = req.params.id;
-            res.status(200).json(updateDoc);
-        }
-    });
-});
-
-app.delete("/api/contacts/:id", function(req, res) {
-    db.collection(CONTACTS_COLLECTION).deleteOne({_id: new ObjectID(req.params.id)}, function(err, result) {
-        if (err) {
-            handleError(res, err.message, "Failed to delete contact");
-        } else {
-            res.status(200).json(req.params.id);
-        }
-    });
-});
