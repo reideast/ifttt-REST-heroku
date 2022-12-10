@@ -6,7 +6,7 @@
   },
   "private": true,
   "dependencies": {
-    "express": "^4.16.3",
+    "express": "^4.17.3",
     "body-parser": "^1.18.3",
     "request": "^2.88.2",
     "sanitize": "^2.1.0"
